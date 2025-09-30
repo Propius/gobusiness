@@ -1,0 +1,65 @@
+.special-tile-selector {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  z-index: 10;
+}
+
+.tile-type-select {
+  font-size: 8px;
+  padding: 1px 2px;
+  border: 1px solid #ccc;
+  border-radius: 2px;
+  background-color: white;
+  min-width: 40px;
+}
+
+.tile-type-select:focus {
+  outline: none;
+  border-color: #007bff;
+}
+
+.special-tile-indicator {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  font-size: 8px;
+  font-weight: bold;
+  color: white;
+  text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.5);
+  pointer-events: none;
+}
+
+.tile-input-container {
+  position: relative;
+  display: inline-block;
+}
+
+.tile-input-container.has-special-tile .tile-input {
+  border-width: 2px;
+  font-weight: bold;
+}
+
+/* Special tile colors */
+.tile-input-container.dl .tile-input {
+  background-color: #87ceeb !important;
+}
+
+.tile-input-container.tl .tile-input {
+  background-color: #0000ff !important;
+  color: white !important;
+}
+
+.tile-input-container.dw .tile-input {
+  background-color: #ffb6c1 !important;
+}
+
+.tile-input-container.tw .tile-input {
+  background-color: #ff0000 !important;
+  color: white !important;
+}
+
+.tile-input-container.normal .tile-input {
+  background-color: #F5DEB3 !important;
+  color: #2F4F4F !important;
+}

@@ -1,0 +1,144 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: scrabble-backend
+  
+  datasource:
+    url: jdbc:h2:mem:scrabble
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+  
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:schema.sql
+      data-locations: classpath:data.sql
+      continue-on-error: false
+
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+logging:
+  level:
+    com.govtech.scrabble: DEBUG
+    org.springframework.web: DEBUG
+
+# Application CORS Configuration
+app:
+  cors:
+    allowed-origins: http://localhost:3000,https://my-scrabble-app.loca.lt,https://my-scrabble-api.loca.lt,https://*.loca.lt,https://*.ngrok.io
+    allowed-methods: GET,POST,PUT,DELETE,OPTIONS
+    allowed-headers: "*"
+    allow-credentials: true
+    max-age: 3600
+  
+  # Rate Limiting Configuration
+  rate-limit:
+    enabled: false
+    requests-per-minute: 120
+    burst-capacity: 20
+
+# Swagger UI customization
+springdoc:
+  swagger-ui:
+    disable-swagger-default-url: true
+    path: /swagger-ui.html
+    config-url: /v3/api-docs/swagger-config
+    url: /v3/api-docs
+  api-docs:
+    path: /v3/api-docs
+
+# Dictionary validation feature
+scrabble:
+  # Custom lightweight dictionary (for Word Scramble only)
+  # 90% smaller footprint and 6x faster loading than LanguageTool
+  custom-dictionary:
+    enabled: true
+    file-path: classpath:scrabble-dictionary.yml
+    min-length: 4
+    max-length: 10
+    cache-enabled: true
+
+  # Legacy LanguageTool dictionary (fallback when custom-dictionary.enabled = false)
+  dictionary:
+    validation:
+      enabled: true
+    word-generation:
+      sampling:
+        max-attempts-per-length: 200
+        max-total-results: 2000
+      exhaustive:
+        enabled: false
+        max-total-results: 1000
+    caching:
+      enabled: false
+  
+  # Word scramble game feature
+  scramble:
+    enabled: true
+    word-length:
+      min: 4
+      max: 10
+    difficulty-levels:
+      easy:
+        min: 4
+        max: 5
+      medium:
+        min: 6
+        max: 7
+      hard:
+        min: 8
+        max: 10
+  
+  # Word finder feature
+  word-finder:
+    enabled: false
+  
+  # Tile configuration
+  tiles:
+    score-calculator:
+      tile-count: 10
+    word-finder:
+      board-tile-count: 15
+      hand-tile-count: 7
+    board-analyzer:
+      board-size: 15
+  
+  # Special tiles feature
+  special-tiles:
+    score-calculator:
+      enabled: true
+    word-finder:
+      enabled: false
+    board-analyzer:
+      enabled: false
+  
+  # Board analyzer feature
+  board-analyzer:
+    enabled: false
+  
+  # Letter scoring display feature
+  letter-scoring:
+    score-calculator:
+      enabled: true
+    word-finder:
+      enabled: false
+    board-analyzer:
+      enabled: false

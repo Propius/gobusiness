@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  scrabble-backend:
+    build:
+      context: ./scrabble-backend
+      dockerfile: Dockerfile
+    container_name: scrabble-backend
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+  scrabble-frontend:
+    build:
+      context: ./scrabble-frontend
+      dockerfile: Dockerfile
+    container_name: scrabble-frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - scrabble-backend
+    environment:
+      - REACT_APP_API_URL=http://localhost:8080
+
+networks:
+  default:
+    name: scrabble-network

@@ -1,0 +1,135 @@
+# Test configuration with rate limiting DISABLED
+# Use this profile for development and testing when you don't want rate limiting
+
+server:
+  port: 8080
+
+spring:
+  application:
+    name: scrabble-backend-test
+
+  datasource:
+    url: jdbc:h2:mem:testdb
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:schema.sql
+      data-locations: classpath:data.sql
+      continue-on-error: false
+
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+logging:
+  level:
+    com.govtech.scrabble: DEBUG
+    org.springframework.web: INFO
+
+# Application CORS Configuration
+app:
+  cors:
+    allowed-origins: http://localhost:3000
+    allowed-methods: GET,POST,PUT,DELETE,OPTIONS
+    allowed-headers: "*"
+    allow-credentials: true
+    max-age: 3600
+
+  # Rate Limiting Configuration - DISABLED for testing
+  rate-limit:
+    enabled: false
+    requests-per-minute: 120
+    burst-capacity: 20
+
+# Swagger UI customization
+springdoc:
+  swagger-ui:
+    disable-swagger-default-url: true
+    path: /swagger-ui.html
+  api-docs:
+    path: /v3/api-docs
+
+# Dictionary validation feature
+scrabble:
+  dictionary:
+    validation:
+      enabled: true
+    word-generation:
+      sampling:
+        max-attempts-per-length: 200
+        max-total-results: 2000
+      exhaustive:
+        enabled: false
+        max-total-results: 1000
+    caching:
+      enabled: false
+
+  # Word scramble game feature
+  scramble:
+    enabled: true
+    word-length:
+      min: 4
+      max: 10
+    difficulty-levels:
+      easy:
+        min: 4
+        max: 5
+      medium:
+        min: 6
+        max: 7
+      hard:
+        min: 8
+        max: 10
+
+  # Word finder feature
+  word-finder:
+    enabled: true
+
+  # Tile configuration
+  tiles:
+    score-calculator:
+      tile-count: 10
+    word-finder:
+      board-tile-count: 15
+      hand-tile-count: 7
+    board-analyzer:
+      board-size: 15
+
+  # Special tiles feature
+  special-tiles:
+    score-calculator:
+      enabled: true
+    word-finder:
+      enabled: true
+    board-analyzer:
+      enabled: true
+
+  # Board analyzer feature
+  board-analyzer:
+    enabled: true
+
+  # Letter scoring display feature
+  letter-scoring:
+    score-calculator:
+      enabled: true
+    word-finder:
+      enabled: true
+    board-analyzer:
+      enabled: true
