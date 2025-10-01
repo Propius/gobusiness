@@ -92,8 +92,17 @@ public class ScrabbleControllerImpl implements ScrabbleController {
         if (!scrabbleProperties.getWordFinder().isEnabled()) {
             throw new IllegalStateException("Word finder feature is disabled");
         }
-        
+
         WordFinderResponse response = wordFinderService.findPossibleWords(request);
+        return ResponseEntity.ok(response);
+    }
+
+    @Override
+    public ResponseEntity<CalculateScoreResponse> validateWord(@Valid @RequestBody CalculateScoreRequest request) {
+        inputValidationService.validateWord(request.getWord());
+
+        String normalizedWord = request.getWord().trim().toUpperCase();
+        CalculateScoreResponse response = scrabbleService.validateWordOnly(normalizedWord);
         return ResponseEntity.ok(response);
     }
 }

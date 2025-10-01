@@ -69,6 +69,7 @@ springdoc:
 scrabble:
   # Custom lightweight dictionary (for Word Scramble only)
   # 90% smaller footprint and 6x faster loading than LanguageTool
+  # Feature-aware routing: Score Calculator uses LanguageTool, Word Scramble uses custom
   custom-dictionary:
     enabled: true
     file-path: classpath:scrabble-dictionary.yml

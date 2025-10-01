@@ -108,4 +108,14 @@ export const scrabbleService = {
       throw error;
     }
   },
+
+  validateWord: async (word) => {
+    try {
+      const response = await api.post(getApiUrl('scrabble', 'validate'), { word });
+      return response.data;
+    } catch (error) {
+      console.error('Error validating word:', error);
+      throw error;
+    }
+  },
 };

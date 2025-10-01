@@ -2,16 +2,17 @@ import React, { useState } from 'react';
 import SpecialTileSelector, { SPECIAL_TILE_TYPES } from './SpecialTileSelector';
 import './SpecialTileSelector.css';
 
-function EnhancedTileInput({ 
-  value, 
-  onChange, 
+function EnhancedTileInput({
+  value,
+  onChange,
   onSpecialTileChange,
-  index, 
+  onKeyDown,
+  index,
   specialTileType = 'normal',
-  specialTilesEnabled = false, 
-  className = '', 
+  specialTilesEnabled = false,
+  className = '',
   placeholder = '',
-  dataAttribute = 'index' 
+  dataAttribute = 'index'
 }) {
   const [showSelector, setShowSelector] = useState(false);
 
@@ -31,6 +32,8 @@ function EnhancedTileInput({
         maxLength="1"
         value={value}
         onChange={(e) => onChange(index, e.target.value)}
+        onKeyDown={(e) => onKeyDown && onKeyDown(index, e)}
+        onFocus={(e) => e.target.select()}
         className={`tile-input ${className}`}
         placeholder={placeholder}
         data-special-tile={specialTileType}
@@ -38,6 +41,7 @@ function EnhancedTileInput({
         data-multiplier-type={tileType.type}
         {...{ [`data-${dataAttribute}`]: index }}
         style={specialTilesEnabled ? { backgroundColor: tileType.color } : {}}
+        autoComplete="off"
       />
       
       {specialTilesEnabled && specialTileType !== 'normal' && (

@@ -16,7 +16,8 @@ import java.util.List;
  * This allows for zero-downtime migration and A/B testing.
  */
 @Service
-@Primary
+// Disabled: Using FeatureAwareDictionaryAdapter instead
+// @Primary
 public class DictionaryAdapter implements EnglishDictionaryService {
 
     private static final Logger logger = LoggerFactory.getLogger(DictionaryAdapter.class);

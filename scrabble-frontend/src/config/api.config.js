@@ -24,7 +24,8 @@ const apiConfig = {
       scores: '/api/scrabble/scores',
       topScores: '/api/scrabble/scores/top',
       wordFinder: '/api/scrabble/word-finder',
-      letterScores: '/api/scrabble/letter-scores'
+      letterScores: '/api/scrabble/letter-scores',
+      validate: '/api/scrabble/validate'
     },
 
     // Configuration API

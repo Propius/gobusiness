@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import TileGrid from '../components/TileGrid';
 import EnhancedTileGrid from '../components/EnhancedTileGrid';
 import ScoreDisplay from '../components/ScoreDisplay';
@@ -7,6 +7,7 @@ import TopScoresModal from '../components/TopScoresModal';
 import LetterScoringLegend from '../components/LetterScoring/LetterScoringLegend';
 import { scrabbleService } from '../services/scrabbleService';
 import { configService } from '../services/configService';
+import { calculateWordScore, calculateScoreWithSpecialTiles } from '../utils/scrabbleScore';
 // import EnhancedTileInput from '../components/SpecialTiles/EnhancedTileInput';
 
 function ScoreCalculator() {
@@ -23,14 +24,7 @@ function ScoreCalculator() {
   const [letterScoringVisible, setLetterScoringVisible] = useState(false);
   const [letterScoringEnabled, setLetterScoringEnabled] = useState(false);
   const [specialTiles, setSpecialTiles] = useState(Array(10).fill('normal'));
-
-  // Add state for managing API requests
-  const [lastRequestTime, setLastRequestTime] = useState(0);
-  const abortControllerRef = useRef(null);
-
-  // Track previous state to detect actual changes
-  const previousTilesRef = useRef('');
-  const previousSpecialTilesRef = useRef('');
+  const [isSaving, setIsSaving] = useState(false);
 
   // Load configuration on component mount
   useEffect(() => {
@@ -59,115 +53,41 @@ function ScoreCalculator() {
     loadConfig();
   }, []);
 
-  const calculateScore = useCallback(async (word, specialTilesData) => {
-    // Cancel any pending request
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
-
-    // Create new abort controller for this request
-    const controller = new AbortController();
-    abortControllerRef.current = controller;
-    
-    // Set timestamp for this request
-    const requestTime = Date.now();
-    setLastRequestTime(requestTime);
-
-    try {
-      const response = await scrabbleService.calculateScore(word, specialTilesData, controller.signal);
-      
-      // Only update state if this is still the most recent request
-      if (requestTime >= lastRequestTime && !controller.signal.aborted) {
-        setScore(response.totalScore);
-        setIsValidWord(response.isValidWord !== false);
-        setValidationMessage(response.validationMessage || '');
-      }
-    } catch (error) {
-      // Only handle error if this request wasn't cancelled and is still current
-      if (!controller.signal.aborted && requestTime >= lastRequestTime) {
-        console.error('Error calculating score:', error);
-        setScore(0);
-        setIsValidWord(true);
-        setValidationMessage('');
-      }
-    }
-  }, [lastRequestTime]);
-
-  // Debounced effect for calculating score
+  // Instant score calculation (frontend-only)
   useEffect(() => {
     const word = tiles.join('');
-    const currentTilesState = word;
-    const currentSpecialTilesState = JSON.stringify(specialTiles);
 
-    // Only trigger validation if:
-    // 1. There is at least one letter on the board
-    // 2. The board state has actually changed
-    const hasLetters = word.trim().length > 0;
-    const tilesChanged = currentTilesState !== previousTilesRef.current;
-    const specialTilesChanged = currentSpecialTilesState !== previousSpecialTilesRef.current;
-    const hasChanges = tilesChanged || specialTilesChanged;
-
-    // If no letters or no changes, skip validation
-    if (!hasLetters || !hasChanges) {
-      // If no letters at all, reset score to 0
-      if (!hasLetters) {
-        setScore(0);
-        setIsValidWord(true);
-        setValidationMessage('');
-      }
+    if (!word.trim()) {
+      setScore(0);
+      setIsValidWord(true);
+      setValidationMessage('');
       return;
     }
 
-    // Update previous state refs
-    previousTilesRef.current = currentTilesState;
-    previousSpecialTilesRef.current = currentSpecialTilesState;
-
-    // Prepare special tiles data if enabled
-    let specialTilesData = null;
-    if (specialTilesEnabled && specialTiles.length > 0) {
-      const positions = [];
-      const specialTileTypes = [];
-
-      // Map frontend tile types to backend expected formats
-      const tileTypeMap = {
-        'dl': 'double_letter',
-        'tl': 'triple_letter',
-        'dw': 'double_word',
-        'tw': 'triple_word'
-      };
-
-      specialTiles.forEach((tileType, index) => {
-        if (tileType !== 'normal') {
-          positions.push(index);
-          specialTileTypes.push(tileTypeMap[tileType] || tileType);
-        }
+    if (specialTilesEnabled) {
+      // Map frontend tile types to backend format expected by utility
+      const mappedSpecialTiles = specialTiles.map(tileType => {
+        const tileTypeMap = {
+          'dl': 'dl',
+          'tl': 'tl',
+          'dw': 'dw',
+          'tw': 'tw',
+          'normal': 'normal'
+        };
+        return tileTypeMap[tileType] || 'normal';
       });
 
-      if (positions.length > 0) {
-        specialTilesData = {
-          positions,
-          specialTiles: specialTileTypes
-        };
-      }
+      const enhancedScore = calculateScoreWithSpecialTiles(word, mappedSpecialTiles);
+      setScore(enhancedScore);
+    } else {
+      const basicScore = calculateWordScore(word);
+      setScore(basicScore);
     }
 
-    // Debounce API calls - wait 500ms after user stops typing
-    const timeoutId = setTimeout(() => {
-      calculateScore(word, specialTilesData);
-    }, 500);
-
-    // Cleanup timeout if tiles change before timeout completes
-    return () => clearTimeout(timeoutId);
-  }, [tiles, specialTiles, specialTilesEnabled, calculateScore]);
-
-  // Cleanup abort controller on unmount
-  useEffect(() => {
-    return () => {
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-      }
-    };
-  }, []);
+    // Clear validation state - validation now happens only on save
+    setIsValidWord(true);
+    setValidationMessage('');
+  }, [tiles, specialTiles, specialTilesEnabled]);
 
   const handleTileChange = (index, value) => {
     if (value && !/^[A-Za-z]$/.test(value)) {
@@ -194,16 +114,43 @@ function ScoreCalculator() {
     setSpecialTiles(newSpecialTiles);
   };
 
+  const handleKeyDown = (index, event) => {
+    if (event.key === 'Backspace') {
+      event.preventDefault();
+
+      // Find the last filled tile from right to left for smooth deletion
+      let lastFilledIndex = -1;
+      for (let i = tiles.length - 1; i >= 0; i--) {
+        if (tiles[i]) {
+          lastFilledIndex = i;
+          break;
+        }
+      }
+
+      if (lastFilledIndex >= 0) {
+        handleTileChange(lastFilledIndex, '');
+        setTimeout(() => {
+          const targetInput = document.querySelector(`input[data-index="${lastFilledIndex}"]`);
+          if (targetInput) {
+            targetInput.focus();
+          }
+        }, 10);
+      }
+    } else if (event.key === 'ArrowLeft' && index > 0) {
+      const prevInput = document.querySelector(`input[data-index="${index - 1}"]`);
+      if (prevInput) prevInput.focus();
+    } else if (event.key === 'ArrowRight' && index < tiles.length - 1) {
+      const nextInput = document.querySelector(`input[data-index="${index + 1}"]`);
+      if (nextInput) nextInput.focus();
+    }
+  };
+
   const handleResetTiles = () => {
     setTiles(Array(tileCount).fill(''));
     setSpecialTiles(Array(tileCount).fill('normal'));
     setScore(0);
     setIsValidWord(true);
     setValidationMessage('');
-
-    // Reset previous state tracking
-    previousTilesRef.current = '';
-    previousSpecialTilesRef.current = JSON.stringify(Array(tileCount).fill('normal'));
 
     const firstInput = document.querySelector('input[data-index="0"]');
     if (firstInput) {
@@ -218,12 +165,22 @@ function ScoreCalculator() {
       return;
     }
 
-    if (isValidWord === false) {
-      alert(`Cannot save invalid word: ${validationMessage}`);
-      return;
-    }
-
+    setIsSaving(true);
     try {
+      // Validate word before saving
+      const validationResponse = await scrabbleService.validateWord(word);
+
+      if (!validationResponse.isValidWord) {
+        setIsValidWord(false);
+        setValidationMessage(validationResponse.validationMessage || 'Invalid word');
+        alert(`Cannot save invalid word: ${validationResponse.validationMessage || 'Invalid word'}`);
+        return;
+      }
+
+      // Word is valid, proceed with saving
+      setIsValidWord(true);
+      setValidationMessage('');
+
       // Prepare special tiles data if enabled
       let positions = null;
       let specialTilesList = null;
@@ -264,6 +221,8 @@ function ScoreCalculator() {
       } else {
         alert('Error saving score. Please try again.');
       }
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -305,17 +264,19 @@ function ScoreCalculator() {
       
       <main className="calculator-main">
         {specialTilesEnabled ? (
-          <EnhancedTileGrid 
+          <EnhancedTileGrid
             tiles={tiles}
             specialTiles={specialTiles}
             onTileChange={handleTileChange}
             onSpecialTileChange={handleSpecialTileChange}
+            onKeyDown={handleKeyDown}
             specialTilesEnabled={true}
           />
         ) : (
-          <TileGrid 
+          <TileGrid
             tiles={tiles}
             onTileChange={handleTileChange}
+            onKeyDown={handleKeyDown}
           />
         )}
         
@@ -329,7 +290,8 @@ function ScoreCalculator() {
           onResetTiles={handleResetTiles}
           onSaveScore={handleSaveScore}
           onViewTopScores={handleViewTopScores}
-          disabled={!canSaveScore}
+          disabled={!canSaveScore || isSaving}
+          isSaving={isSaving}
         />
       </main>
       

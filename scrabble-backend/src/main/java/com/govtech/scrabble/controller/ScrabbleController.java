@@ -64,4 +64,12 @@ public interface ScrabbleController {
             @ApiResponse(responseCode = "404", description = "Feature not enabled")
     })
     ResponseEntity<WordFinderResponse> findPossibleWords(@Valid @RequestBody WordFinderRequest request);
+
+    @PostMapping("/validate")
+    @Operation(summary = "Validate a word", description = "Validate whether a word exists in the English dictionary")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Word validated successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid input")
+    })
+    ResponseEntity<CalculateScoreResponse> validateWord(@Valid @RequestBody CalculateScoreRequest request);
 }

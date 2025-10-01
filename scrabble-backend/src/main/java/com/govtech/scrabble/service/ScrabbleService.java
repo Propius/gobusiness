@@ -48,4 +48,11 @@ public interface ScrabbleService {
      * @return List of top scores
      */
     List<ScoreResponse> getTopScores();
+
+    /**
+     * Validate a word without calculating score
+     * @param word The word to validate
+     * @return CalculateScoreResponse containing only validation results
+     */
+    CalculateScoreResponse validateWordOnly(String word);
 }

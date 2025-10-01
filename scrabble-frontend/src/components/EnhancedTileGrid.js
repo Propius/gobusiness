@@ -2,7 +2,7 @@ import React from 'react';
 import EnhancedTileInput from './SpecialTiles/EnhancedTileInput';
 import './TileGrid.css';
 
-function EnhancedTileGrid({ tiles, specialTiles = [], onTileChange, onSpecialTileChange, specialTilesEnabled = false }) {
+function EnhancedTileGrid({ tiles, specialTiles = [], onTileChange, onSpecialTileChange, onKeyDown, specialTilesEnabled = false }) {
   return (
     <div className="tile-grid-section">
       <h2>Enter Your Letters</h2>
@@ -13,6 +13,7 @@ function EnhancedTileGrid({ tiles, specialTiles = [], onTileChange, onSpecialTil
             value={tile}
             onChange={onTileChange}
             onSpecialTileChange={onSpecialTileChange}
+            onKeyDown={onKeyDown}
             index={index}
             specialTileType={specialTiles[index] || 'normal'}
             specialTilesEnabled={specialTilesEnabled}

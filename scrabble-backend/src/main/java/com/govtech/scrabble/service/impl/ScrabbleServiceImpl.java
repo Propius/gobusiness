@@ -44,14 +44,20 @@ public class ScrabbleServiceImpl implements ScrabbleService {
         if (word == null || word.trim().isEmpty()) {
             return new CalculateScoreResponse("", 0, true, null);
         }
-        
+
         String normalizedWord = word.toUpperCase().trim();
         int totalScore = ScrabbleScoreUtil.calculateWordScore(normalizedWord);
-        
-        boolean isValidWord = englishDictionaryService.isValidWord(normalizedWord);
-        String validationMessage = isValidWord ? null : "Word not found in dictionary";
-        
-        return new CalculateScoreResponse(normalizedWord, totalScore, isValidWord, validationMessage);
+
+        // Set context for feature-aware dictionary selection (Score Calculator uses LanguageTool)
+        try {
+            com.govtech.scrabble.service.FeatureAwareDictionaryAdapter.setFeatureContext("SCORE_CALCULATOR");
+            boolean isValidWord = englishDictionaryService.isValidWord(normalizedWord);
+            String validationMessage = isValidWord ? null : "Word not found in dictionary";
+
+            return new CalculateScoreResponse(normalizedWord, totalScore, isValidWord, validationMessage);
+        } finally {
+            com.govtech.scrabble.service.FeatureAwareDictionaryAdapter.clearFeatureContext();
+        }
     }
     
     @Override
@@ -61,10 +67,17 @@ public class ScrabbleServiceImpl implements ScrabbleService {
         }
         
         String normalizedWord = request.getWord().toUpperCase().trim();
-        
-        // Validate word with dictionary
-        boolean isValidWord = englishDictionaryService.isValidWord(normalizedWord);
-        String validationMessage = isValidWord ? null : "Word not found in dictionary";
+
+        // Validate word with dictionary (set context for Score Calculator)
+        boolean isValidWord;
+        String validationMessage;
+        try {
+            com.govtech.scrabble.service.FeatureAwareDictionaryAdapter.setFeatureContext("SCORE_CALCULATOR");
+            isValidWord = englishDictionaryService.isValidWord(normalizedWord);
+            validationMessage = isValidWord ? null : "Word not found in dictionary";
+        } finally {
+            com.govtech.scrabble.service.FeatureAwareDictionaryAdapter.clearFeatureContext();
+        }
         
         // Calculate base score (without special tiles)
         int baseScore = ScrabbleScoreUtil.calculateWordScore(normalizedWord);
@@ -188,5 +201,26 @@ public class ScrabbleServiceImpl implements ScrabbleService {
         return topScores.stream()
                 .map(ScoreResponse::new)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public CalculateScoreResponse validateWordOnly(String word) {
+        if (word == null || word.trim().isEmpty()) {
+            return new CalculateScoreResponse("", 0, false, "Word cannot be empty");
+        }
+
+        String normalizedWord = word.toUpperCase().trim();
+
+        // Set context for feature-aware dictionary selection (Score Calculator uses LanguageTool)
+        try {
+            com.govtech.scrabble.service.FeatureAwareDictionaryAdapter.setFeatureContext("SCORE_CALCULATOR");
+            boolean isValidWord = englishDictionaryService.isValidWord(normalizedWord);
+            String validationMessage = isValidWord ? null : "Word not found in dictionary";
+
+            // Return response with score 0, only validation matters here
+            return new CalculateScoreResponse(normalizedWord, 0, isValidWord, validationMessage);
+        } finally {
+            com.govtech.scrabble.service.FeatureAwareDictionaryAdapter.clearFeatureContext();
+        }
     }
 }

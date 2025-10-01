@@ -8,16 +8,34 @@ const TileGrid = ({ tiles, onTileChange, onKeyDown }) => {
   };
 
   const handleKeyDown = (index, event) => {
-    if (event.key === 'Backspace' && !tiles[index] && index > 0) {
-      const prevIndex = index - 1;
-      document.querySelector(`input[data-index="${prevIndex}"]`).focus();
-      onTileChange(prevIndex, '');
+    if (event.key === 'Backspace') {
+      event.preventDefault(); // Prevent default browser behavior
+
+      // Find the last filled tile from right to left for smooth deletion
+      let lastFilledIndex = -1;
+      for (let i = tiles.length - 1; i >= 0; i--) {
+        if (tiles[i]) {
+          lastFilledIndex = i;
+          break;
+        }
+      }
+
+      // If found a filled tile, clear it and move cursor there
+      if (lastFilledIndex >= 0) {
+        onTileChange(lastFilledIndex, '');
+        setTimeout(() => {
+          const targetInput = document.querySelector(`input[data-index="${lastFilledIndex}"]`);
+          if (targetInput) {
+            targetInput.focus();
+          }
+        }, 10);
+      }
     } else if (event.key === 'ArrowLeft' && index > 0) {
       document.querySelector(`input[data-index="${index - 1}"]`).focus();
     } else if (event.key === 'ArrowRight' && index < tiles.length - 1) {
       document.querySelector(`input[data-index="${index + 1}"]`).focus();
     }
-    
+
     if (onKeyDown) {
       onKeyDown(index, event);
     }

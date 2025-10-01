@@ -71,12 +71,18 @@ public class WordScrambleServiceImpl implements WordScrambleService {
         
         // Use custom ScrabbleDictionary if loaded, otherwise fall back to EnglishDictionaryService
         String originalWord;
-        if (scrabbleDictionary.isLoaded()) {
-            logger.debug("Using ScrabbleDictionary for word scramble");
-            originalWord = getRandomWordFromScrabbleDictionary(minLength, maxLength);
-        } else {
-            logger.debug("Falling back to EnglishDictionaryService for word scramble");
-            originalWord = englishDictionaryService.getRandomWord(minLength, maxLength);
+        try {
+            com.govtech.scrabble.service.FeatureAwareDictionaryAdapter.setFeatureContext("WORD_SCRAMBLE");
+
+            if (scrabbleDictionary.isLoaded()) {
+                logger.debug("Using ScrabbleDictionary for word scramble");
+                originalWord = getRandomWordFromScrabbleDictionary(minLength, maxLength);
+            } else {
+                logger.debug("Falling back to EnglishDictionaryService for word scramble");
+                originalWord = englishDictionaryService.getRandomWord(minLength, maxLength);
+            }
+        } finally {
+            com.govtech.scrabble.service.FeatureAwareDictionaryAdapter.clearFeatureContext();
         }
 
         String scrambledWord = scrambleWord(originalWord);
